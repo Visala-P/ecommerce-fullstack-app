@@ -43,3 +43,21 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-frontend:${{ github.sha }}
+
+  deploy:
+    name: Deploy to server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            docker-compose pull
+            docker-compose -f docker-compose.prod.yml up -d --remove-orphans
